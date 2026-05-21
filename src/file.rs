@@ -4,21 +4,6 @@ use thiserror::Error;
 
 use crate::config::Config;
 
-// trait PathExt {
-//     fn all_extensions(&self) -> Option<String>;
-// }
-
-// impl PathExt for Path {
-//     fn all_extensions(&self) -> Option<String> {
-//         let name = self.file_name()?.to_str()?;
-//         let prefix = self.file_prefix()?.to_str()?;
-
-//         name.strip_prefix(prefix)?
-//             .strip_prefix('.')
-//             .map(str::to_string)
-//     }
-// }
-
 #[derive(Error, Debug)]
 pub enum FileError {
     #[error("Path is a directory.")]
@@ -72,18 +57,6 @@ impl File {
             file_extension: String::from(""),
         }
     }
-
-    // pub fn ensure_is_file(&mut self) -> Result<&mut Self, FileError> {
-    //     if self.path.is_dir() {
-    //         println!("path: {:#?}", self.path);
-    //         println!("path is dir: {:#?}", self.path.is_dir());
-    //         return Err(FileError::PathIsDir);
-    //     }
-
-    //     println!("ensure_is_file: {self:#?}");
-
-    //     Ok(self)
-    // }
 
     pub fn extract_metadata(&mut self) -> Result<&mut Self, FileError> {
         // get file name or return a FileError

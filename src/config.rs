@@ -29,16 +29,22 @@ pub enum ConfigError {
     TomlSer(#[from] toml::ser::Error),
 }
 
+trait HashMapExt {
+    fn insert_many(&mut self, keys: &[&str], value: &str);
+}
+
+impl HashMapExt for HashMap<String, String> {
+    fn insert_many(&mut self, keys: &[&str], value: &str) {
+        for key in keys {
+            self.insert(key.to_string(), value.to_string());
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Directories {
     pub source_dir: PathBuf,
     pub destination_dir: PathBuf,
-    pub downloaded_images: String,
-    pub downloaded_audios: String,
-    pub downloaded_videos: String,
-    pub downloaded_documents: String,
-    pub downloaded_applications: String,
-    pub downloaded_archives: String,
 }
 
 impl Directories {
@@ -48,12 +54,6 @@ impl Directories {
         Self {
             source_dir: download_dir.clone(),
             destination_dir: download_dir,
-            downloaded_images: String::from("Downloaded Images"),
-            downloaded_audios: String::from("Downloaded Audios"),
-            downloaded_videos: String::from("Downloaded Videos"),
-            downloaded_documents: String::from("Downloaded Documents"),
-            downloaded_applications: String::from("Downloaded Applications"),
-            downloaded_archives: String::from("Downloaded Archives"),
         }
     }
 }
@@ -65,90 +65,26 @@ impl Default for Directories {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Extensions {
-    pub image: Vec<String>,
-    pub audio: Vec<String>,
-    pub video: Vec<String>,
-    pub document: Vec<String>,
-    pub application: Vec<String>,
-    pub archive: Vec<String>,
-}
-
-impl Extensions {
-    fn new() -> Self {
-        Self {
-            image: vec![
-                String::from("png"),
-                String::from("jpg"),
-                String::from("jpeg"),
-                String::from("gif"),
-                String::from("jfif"),
-                String::from("webp"),
-            ],
-            audio: vec![String::from("mp3")],
-            video: vec![
-                String::from("mp4"),
-                String::from("mkv"),
-                String::from("mov"),
-            ],
-            document: vec![
-                String::from("pdf"),
-                String::from("txt"),
-                String::from("json"),
-                String::from("ini"),
-            ],
-            application: vec![String::from("exe"), String::from("msi")],
-            archive: vec![
-                String::from("zip"),
-                String::from("rar"),
-                String::from("7z"),
-                String::from("iso"),
-            ],
-        }
-    }
-}
-
-impl Default for Extensions {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub directories: Directories,
-    pub extensions: Extensions,
     pub extension_to_directory: HashMap<String, String>,
 }
 
 impl Config {
     fn new() -> Self {
-        let mut extension_to_directory: HashMap<String, String> = HashMap::new();
         let directories = Directories::new();
-        let extensions = Extensions::new();
+        let mut extension_to_directory: HashMap<String, String> = HashMap::new();
 
-        for ext in &extensions.image {
-            extension_to_directory.insert(ext.clone(), directories.downloaded_images.clone());
-        }
-        for ext in &extensions.audio {
-            extension_to_directory.insert(ext.clone(), directories.downloaded_audios.clone());
-        }
-        for ext in &extensions.video {
-            extension_to_directory.insert(ext.clone(), directories.downloaded_videos.clone());
-        }
-        for ext in &extensions.document {
-            extension_to_directory.insert(ext.clone(), directories.downloaded_documents.clone());
-        }
-        for ext in &extensions.application {
-            extension_to_directory.insert(ext.clone(), directories.downloaded_applications.clone());
-        }
-        for ext in &extensions.archive {
-            extension_to_directory.insert(ext.clone(), directories.downloaded_archives.clone());
-        }
+        extension_to_directory
+            .insert_many(&["png", "jpg", "jpeg", "gif", "webp"], "Downloaded Images");
+        extension_to_directory.insert_many(&["mp3"], "Downloaded Audios");
+        extension_to_directory.insert_many(&["mp4", "mkv", "mov"], "Downloaded Videos");
+        extension_to_directory.insert_many(&["pdf", "txt", "json", "ini"], "Downloaded Documents");
+        extension_to_directory.insert_many(&["exe", "msi"], "Downloaded Applications");
+        extension_to_directory.insert_many(&["zip", "rar", "7z", "iso"], "Downloaded Archives");
 
         Self {
             directories,
-            extensions,
             extension_to_directory,
         }
     }
