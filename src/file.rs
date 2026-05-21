@@ -6,9 +6,6 @@ use crate::config::Config;
 
 #[derive(Error, Debug)]
 pub enum FileError {
-    #[error("Path is a directory.")]
-    PathIsDir,
-
     #[error("Path is not a file.")]
     PathIsNotFile,
 
@@ -30,24 +27,6 @@ pub struct File {
     file_extension: String,
 }
 
-impl Default for File {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl From<PathBuf> for File {
-    fn from(value: PathBuf) -> Self {
-        let file = Self {
-            path: PathBuf::from(value),
-            destination: PathBuf::from(""),
-            file_name: String::from(""),
-            file_extension: String::from(""),
-        };
-        file
-    }
-}
-
 impl File {
     fn new() -> Self {
         File {
@@ -56,6 +35,11 @@ impl File {
             file_name: String::from(""),
             file_extension: String::from(""),
         }
+    }
+
+    pub fn with_path<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
+        self.path = path.as_ref().to_owned();
+        self
     }
 
     pub fn extract_metadata(&mut self) -> Result<&mut Self, FileError> {
@@ -150,5 +134,11 @@ impl File {
             fs::remove_file(&self.path)?;
             Ok(())
         })
+    }
+}
+
+impl Default for File {
+    fn default() -> Self {
+        Self::new()
     }
 }

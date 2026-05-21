@@ -29,22 +29,10 @@ pub enum ConfigError {
     TomlSer(#[from] toml::ser::Error),
 }
 
-trait HashMapExt {
-    fn insert_many<S>(&mut self, keys: &[S], value: impl Into<String>)
-    where
-        S: AsRef<str>;
-}
-
-impl HashMapExt for HashMap<String, String> {
-    fn insert_many<S>(&mut self, keys: &[S], value: impl Into<String>)
-    where
-        S: AsRef<str>,
-    {
-        let value = value.into();
-        for key in keys {
-            self.insert(key.as_ref().to_owned(), value.clone());
-        }
-    }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Config {
+    pub directories: Directories,
+    pub extension_to_directory: HashMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -53,50 +41,33 @@ pub struct Directories {
     pub destination_dir: PathBuf,
 }
 
-impl Directories {
-    fn new() -> Self {
-        let download_dir = dirs::download_dir().unwrap_or_else(|| PathBuf::from("Downloads"));
-
-        Self {
-            source_dir: download_dir.clone(),
-            destination_dir: download_dir,
-        }
-    }
-}
-
-impl Default for Directories {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Config {
-    pub directories: Directories,
-    pub extension_to_directory: HashMap<String, String>,
-}
-
 impl Config {
     fn new() -> Self {
-        let directories = Directories::new();
         let mut extension_to_directory: HashMap<String, String> = HashMap::new();
 
-        extension_to_directory
-            .insert_many(&["png", "jpg", "jpeg", "gif", "webp"], "Downloaded Images");
-        extension_to_directory.insert_many(&["mp3"], "Downloaded Audios");
-        extension_to_directory.insert_many(&["mp4", "mkv", "mov"], "Downloaded Videos");
-        extension_to_directory.insert_many(&["pdf", "txt", "json", "ini"], "Downloaded Documents");
-        extension_to_directory.insert_many(&["exe", "msi"], "Downloaded Applications");
-        extension_to_directory.insert_many(&["zip", "rar", "7z", "iso"], "Downloaded Archives");
+        for ext in ["png", "jpg", "jpeg", "gif", "webp"] {
+            extension_to_directory.insert(ext.to_string(), "Downloaded Images".to_string());
+        }
+        for ext in ["mp3"] {
+            extension_to_directory.insert(ext.to_string(), "Downloaded Audios".to_string());
+        }
+        for ext in ["mp4", "mkv", "mov"] {
+            extension_to_directory.insert(ext.to_string(), "Downloaded Videos".to_string());
+        }
+        for ext in ["pdf", "txt", "json", "ini"] {
+            extension_to_directory.insert(ext.to_string(), "Downloaded Documents".to_string());
+        }
+        for ext in ["exe", "msi"] {
+            extension_to_directory.insert(ext.to_string(), "Downloaded Applications".to_string());
+        }
+        for ext in ["zip", "rar", "7z", "iso"] {
+            extension_to_directory.insert(ext.to_string(), "Downloaded Archives".to_string());
+        }
 
         Self {
-            directories,
+            directories: Directories::new(),
             extension_to_directory,
         }
-    }
-
-    fn to_toml(&self) -> Result<String, toml::ser::Error> {
-        toml::to_string(self)
     }
 
     fn get_config_path() -> Result<PathBuf, ConfigError> {
@@ -115,7 +86,7 @@ impl Config {
             return Ok(());
         }
 
-        let config = self::Config::new().to_toml()?;
+        let config = toml::to_string(&self::Config::new())?;
         fs::write(config_path, config)?;
         Ok(())
     }
@@ -155,6 +126,23 @@ impl Config {
 }
 
 impl Default for Config {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Directories {
+    fn new() -> Self {
+        let download_dir = dirs::download_dir().unwrap_or_else(|| PathBuf::from("Downloads"));
+
+        Self {
+            source_dir: download_dir.clone(),
+            destination_dir: download_dir,
+        }
+    }
+}
+
+impl Default for Directories {
     fn default() -> Self {
         Self::new()
     }

@@ -52,7 +52,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // creates all directories
                         // rename file if it is a duplicate, then move file
                         // handle possible errors
-                        if let Err(e) = File::from(path.clone())
+                        if let Err(e) = File::default()
+                            .with_path(&path)
                             .extract_metadata()
                             .and_then(|f| f.ensure_destination(&config))
                             .and_then(|f| f.ensure_unique_filename().move_file())
