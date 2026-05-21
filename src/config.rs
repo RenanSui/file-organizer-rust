@@ -30,13 +30,19 @@ pub enum ConfigError {
 }
 
 trait HashMapExt {
-    fn insert_many(&mut self, keys: &[&str], value: &str);
+    fn insert_many<S>(&mut self, keys: &[S], value: impl Into<String>)
+    where
+        S: AsRef<str>;
 }
 
 impl HashMapExt for HashMap<String, String> {
-    fn insert_many(&mut self, keys: &[&str], value: &str) {
+    fn insert_many<S>(&mut self, keys: &[S], value: impl Into<String>)
+    where
+        S: AsRef<str>,
+    {
+        let value = value.into();
         for key in keys {
-            self.insert(key.to_string(), value.to_string());
+            self.insert(key.as_ref().to_owned(), value.clone());
         }
     }
 }
